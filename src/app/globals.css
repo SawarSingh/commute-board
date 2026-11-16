@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background-color: #070a0f;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.leaflet-route,
+.leaflet-container {
+  background: #0b1220;
+}
+
+.leaflet-container {
+  font: inherit;
+}
+
+.leaflet-control-attribution {
+  background: rgba(7, 10, 15, 0.75) !important;
+  color: #71717a !important;
+  font-size: 9px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #a1a1aa !important;
+}

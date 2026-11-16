@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+data
+.env*.local
+.git
+.gitignore
+AGENTS.md
+ROADMAP.md
+*.log
+*.tsbuildinfo
+.DS_Store
