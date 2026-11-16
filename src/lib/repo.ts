@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { hashToken, newSessionToken, sessionMaxAgeSeconds } from "./tokens";
-import type { Route, Snapshot } from "./types";
+import { hashToken, newDeviceToken, newSessionToken, sessionMaxAgeSeconds } from "./tokens";
+import type { DeviceToken, Route, Snapshot } from "./types";
 
 export type SessionUser = { id: number; email: string };
 
@@ -39,6 +39,13 @@ type SnapshotRow = {
   source: string;
 };
 
+type DeviceTokenRow = {
+  id: number;
+  label: string;
+  created_at: string;
+  last_used_at: string | null;
+};
+
 function mapRoute(row: RouteRow): Route {
   return {
     id: row.id,
@@ -69,6 +76,15 @@ function mapSnapshot(row: SnapshotRow): Snapshot {
     historicS: row.historic_s,
     distanceM: row.distance_m,
     source: row.source,
+  };
+}
+
+function mapDeviceToken(row: DeviceTokenRow): DeviceToken {
+  return {
+    id: row.id,
+    label: row.label,
+    createdAt: row.created_at,
+    lastUsedAt: row.last_used_at ?? null,
   };
 }
 
@@ -113,6 +129,62 @@ export function findUserByToken(tokenHash: string): SessionUser | null {
 
 export function deleteSession(tokenHash: string): void {
   db.prepare("DELETE FROM sessions WHERE token_hash = ?").run(tokenHash);
+}
+
+export function createDeviceToken(userId: number, label: string): DeviceToken & { token: string } {
+  const token = newDeviceToken();
+  const createdAt = new Date().toISOString();
+  const result = db
+    .prepare(
+      `INSERT INTO device_tokens (user_id, token_hash, label, created_at)
+       VALUES (?, ?, ?, ?)`,
+    )
+    .run(userId, hashToken(token), label, createdAt);
+  return {
+    id: Number(result.lastInsertRowid),
+    label,
+    createdAt,
+    lastUsedAt: null,
+    token,
+  };
+}
+
+export function listDeviceTokens(userId: number): DeviceToken[] {
+  const rows = db
+    .prepare(
+      `SELECT id, label, created_at, last_used_at
+       FROM device_tokens WHERE user_id = ? ORDER BY id DESC`,
+    )
+    .all(userId) as DeviceTokenRow[];
+  return rows.map(mapDeviceToken);
+}
+
+export function deleteDeviceToken(userId: number, tokenId: number): boolean {
+  const result = db
+    .prepare("DELETE FROM device_tokens WHERE id = ? AND user_id = ?")
+    .run(tokenId, userId);
+  return Number(result.changes) > 0;
+}
+
+export function findUserByDeviceToken(
+  tokenHash: string,
+): (SessionUser & { tokenId: number }) | null {
+  const row = db
+    .prepare(
+      `SELECT u.id, u.email, t.id AS token_id
+       FROM device_tokens t JOIN users u ON u.id = t.user_id
+       WHERE t.token_hash = ?`,
+    )
+    .get(tokenHash) as { id: number; email: string; token_id: number } | undefined;
+  if (!row) return null;
+  return { id: row.id, email: row.email, tokenId: row.token_id };
+}
+
+export function touchDeviceToken(tokenId: number): void {
+  db.prepare("UPDATE device_tokens SET last_used_at = ? WHERE id = ?").run(
+    new Date().toISOString(),
+    tokenId,
+  );
 }
 
 export function listRoutesForUser(userId: number): Route[] {

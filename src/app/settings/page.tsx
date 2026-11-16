@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { getSessionUser } from "@/lib/auth";
-import { listRoutesForUser } from "@/lib/repo";
+import { listDeviceTokens, listRoutesForUser } from "@/lib/repo";
 import { DeleteRouteButton } from "./DeleteRouteButton";
+import { WidgetTokens } from "./WidgetTokens";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function SettingsPage() {
   if (!user) redirect("/login");
 
   const routes = listRoutesForUser(user.id);
+  const tokens = listDeviceTokens(user.id);
 
   return (
     <>
@@ -79,6 +81,8 @@ export default async function SettingsPage() {
             ))}
           </ul>
         )}
+
+        <WidgetTokens initial={tokens} />
       </main>
     </>
   );

@@ -1,6 +1,11 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { findUserByToken, type SessionUser } from "./repo";
+import {
+  findUserByDeviceToken,
+  findUserByToken,
+  touchDeviceToken,
+  type SessionUser,
+} from "./repo";
 import { SESSION_COOKIE, hashToken } from "./tokens";
 
 export function hashPassword(password: string): string {
@@ -23,4 +28,14 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return findUserByToken(hashToken(token));
+}
+
+export function getDeviceUser(request: Request): SessionUser | null {
+  const header = request.headers.get("authorization") ?? "";
+  const [scheme, token] = header.split(/\s+/, 2);
+  if (scheme?.toLowerCase() !== "bearer" || !token) return null;
+  const row = findUserByDeviceToken(hashToken(token));
+  if (!row) return null;
+  touchDeviceToken(row.tokenId);
+  return { id: row.id, email: row.email };
 }

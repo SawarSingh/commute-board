@@ -37,6 +37,8 @@ Restart both after changing the key.
 - `src/app/api/routes/pair` — POST `{ id }` creates or links the reverse route (`paired_route_id` both ways)
 - `src/app/api/route-options` — GET up to three route alternatives with geometry and pin points, for `?routeId=` or `?fromLat=&fromLng=&toLat=&toLng=` (optional `viaLat/viaLng`); cached for 120 s
 - `src/app/api/reverse` — GET `?routeId=` one-off live estimate for the reversed trip, not saved
+- `src/app/api/widget/current` — bearer-token auth for native widgets; returns the next route by leave-by, refreshes stale traffic, and reports leave-by/arrive-now
+- `src/app/api/widget-tokens` — session-auth create/list/revoke for read-only widget tokens (raw token returned once)
 - `src/app/api/search` — TomTom typeahead place search (mock fallback)
 - `src/lib/` — db, repo, auth, tokens, traffic adapter, IST time helpers, formatting
 - `src/lib/predict.ts`, `src/lib/leaveby.ts` — departure-time ETA prediction and leave-by solver
@@ -45,15 +47,17 @@ Restart both after changing the key.
 - `src/app/page.tsx` + `HomePager.tsx` — paged board: overview slide first, then one detail slide per route, ordered by next leave-by
 - `src/app/OverviewClient.tsx` — overview slide: one card per route with current times
 - `src/app/routes/[id]` — standalone route detail page (same board component)
-- `src/app/routes/new`, `src/app/routes/[id]/edit` — create/edit route (with an optional via point); `src/app/settings` — route manager
+- `src/app/routes/new`, `src/app/routes/[id]/edit` — create/edit route (with an optional via point); `src/app/settings` — route manager + widget token manager
+- `src/app/settings/WidgetTokens.tsx` — create/copy/revoke read-only widget tokens
 - `src/components/RouteMap.tsx` — Leaflet + CARTO dark map preview (client-only, no interactions)
 - `src/components/RouteOptions.tsx` — route option cards/grid used by the detail page and route form
 - `src/app/dashboard` — redirects to `/` (kept for old links)
 
 ## Scope
 
-The current feature set is the MVP. Deferred functionality and the mobile plan (PWA, Capacitor,
-widgets) are written down in `ROADMAP.md`; do not implement them until the MVP is stable.
+The web MVP is deployed on Railway. Native work is in progress: device-token auth and the widget
+API are implemented; the Capacitor iOS shell and WidgetKit extension are next. Other deferred
+functionality is written down in `ROADMAP.md`; keep the web MVP stable while adding native clients.
 
 ## Conventions
 
@@ -71,3 +75,4 @@ widgets) are written down in `ROADMAP.md`; do not implement them until the MVP i
 - Return trips are separate routes linked via `paired_route_id`. Pairing creates the swapped route (name `<dest> to <origin>`, arrival target +9 hours); deleting one clears the other's link. The detail page shows a live "Return trip now" estimate and "Track return trip" when unpaired.
 - A route can have an optional via point (`via_label`/`via_lat`/`via_lng`) sent to TomTom as an intermediate waypoint; this pins the corridor (e.g. IFFCO Chowk) so the ETA matches the intended path instead of TomTom's own fastest route. Via is copied to the paired return route, and editing From, To, or Via updates the pair (swapped origin/dest, derived name, same via); moving either route wipes both histories.
 - Route options show three cards with Leaflet map previews: the currently tracked route (if a via is set), the fastest broad TomTom route, and up to two alternatives. Selecting a pinned option saves its pin as the route's via; selecting the no-pin fastest option clears via. Switching resets history for the route and its pair. Option labels are derived from TomTom guidance (longest named road, fallback Fastest/Alternative), and geometry is simplified to at most 120 points for the previews.
+- Widget tokens are read-only bearer tokens (`cbw_...`), stored as SHA-256 hashes, capped at 10 per user, and only returned once at creation. `/api/widget/current` accepts `Authorization: Bearer <token>`; session cookies do not work for the widget endpoint.

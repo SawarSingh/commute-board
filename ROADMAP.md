@@ -36,7 +36,7 @@ route management, snapshot worker, Traffic Stats backfill. Everything below is d
 
 ### Platform & polish
 - 24/7 hosted worker + DB backups (M, high; prerequisite for alerts and widgets)
-- Device-token auth for native clients and widgets (S, high; prerequisite)
+- ~~Device-token auth for native clients and widgets~~ done (read-only widget tokens + `/api/widget/current`)
 - Dark/light theme, km/mi, 12/24h (S, low)
 - Export data / delete account (S, low)
 - Calendar integration to set the arrival target from the first meeting (M, med)
@@ -48,14 +48,14 @@ Order: web product first, then wrap it. Do not rewrite the UI before the web MVP
 
 1. PWA: manifest, icons, installable on iPad/iPhone/Android, offline shell, web push (iOS 16.4+).
    No widgets from a pure web app.
-2. Hosted worker + database (Fly.io / Railway / VPS) so data is always fresh.
-3. Device-token auth alongside cookies for native clients and widgets.
+2. Hosted worker + database — done on Railway with a persistent volume.
+3. Device-token auth alongside cookies — done for widgets (`/api/widget/current`).
 4. Phone layout: stack the 2x2 grid into one column, live card first.
-5. Capacitor shell reusing the existing web UI for App Store / Play Store; add native push.
-6. Native widgets: iOS WidgetKit (Swift, App Group + backend API), Android Glance. A widget shows
-   drive time and leave-by from `/api/current`.
+5. Capacitor iOS shell reusing the deployed web UI; add native push later.
+6. iOS WidgetKit widget (Swift, App Group + `/api/widget/current`) showing the next route,
+   drive time, and leave-by. Android Glance is deferred.
 7. Zero-native quick win before Capacitor: iOS Scriptable widget or Shortcut hitting
-   `/api/current` with a device token.
+   `/api/widget/current` with a device token.
 
 Caveats:
 - App Store guideline 4.2: a bare website wrapper can be rejected; widgets, push and offline

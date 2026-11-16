@@ -3,6 +3,13 @@ export type User = {
   email: string;
 };
 
+export type DeviceToken = {
+  id: number;
+  label: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+};
+
 export type Route = {
   id: number;
   userId: number;
@@ -89,6 +96,19 @@ export type CurrentPayload = {
   leaveBySource: LeaveBySource | null;
   arriveByNow: string | null;
   originOverride: GeoPoint | null;
+  now: string;
+  mock: boolean;
+  warning: string | null;
+};
+
+export type WidgetPayload = {
+  route: Route | null;
+  snapshot: Snapshot | null;
+  leaveBy: string | null;
+  leaveByDurationS: number | null;
+  leaveBySource: LeaveBySource | null;
+  arriveByNow: string | null;
+  nowDurationS: number | null;
   now: string;
   mock: boolean;
   warning: string | null;
